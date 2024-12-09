@@ -1,16 +1,10 @@
 import json
 import os
+from collections import defaultdict
 
 
 def analyze_shots_and_checks(games_dir):
-    stats = {
-        "shot_sher_check_red_result_red_win": 0,
-        "shot_sher_check_red_result_red_lose": 0,
-        "shot_sher_check_black_result_red_win": 0,
-        "shot_sher_check_black_result_red_lose": 0,
-        "with_shot_peace": 0,
-        "total_games": 0
-    }
+    stats = defaultdict(int)
 
     for filename in os.listdir(games_dir):
         if not filename.endswith('.json'):
@@ -19,8 +13,34 @@ def analyze_shots_and_checks(games_dir):
         filepath = os.path.join(games_dir, filename)
         with open(filepath, 'r', encoding='utf-8') as f:
             game_data = json.load(f)
-            if game_data.get("result") is not None:
+            result = game_data.get('result')
+            if result is not None:
                 stats["total_games"] += 1
+
+
+            sher_checks = []
+            for check in game_data.get('checks', []):
+                if check.get('role') == 3:
+                    checked_player_role = next(
+                        (player.get('role') for player in game_data.get('players', []) if
+                         player.get('position') == check.get('player')),
+                        None
+                    )
+                    sher_checks.append(checked_player_role)
+
+            if result == 0:
+                if len(sher_checks) >= 1 and sher_checks[0] in [2]:
+                    stats["check_red_red_wins"] += 1
+                if len(sher_checks) >= 1 and sher_checks[0] in [0, 1]:
+                    stats["check_black_red_wins"] += 1
+                stats["red_wins"] += 1
+            else:
+                if len(sher_checks) >= 1 and sher_checks[0] in [2]:
+                    stats["check_red_black_wins"] += 1
+                if len(sher_checks) >= 1 and sher_checks[0] in [0, 1]:
+                    stats["check_black_black_wins"] += 1
+
+
             # Filter games where the first shot is by a role 3 player
             first_shot = list(
                 set(map(lambda it: it["victim"],
@@ -41,7 +61,6 @@ def analyze_shots_and_checks(games_dir):
                              player.get('position') == check.get('player')),
                             None
                         )
-                        result = game_data.get('result')
 
                         if checked_player_role == 2:
                             if result == 0:
