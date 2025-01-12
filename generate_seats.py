@@ -5,7 +5,7 @@ from ortools.sat.python.cp_model import INFEASIBLE
 SEATS_PER_TABLE = 10
 
 
-def generate_seats(num_participants: int, num_rounds: int, min_times_together: int, max_times_together: int):
+def generate_seats(num_participants: int, num_rounds: int, max_difference: int):
     if num_participants % SEATS_PER_TABLE != 0:
         raise ValueError('num_participants must be a multiple of 10')
     num_tables = num_participants // SEATS_PER_TABLE
@@ -44,11 +44,16 @@ def generate_seats(num_participants: int, num_rounds: int, min_times_together: i
     # 3. Each participant plays exactly once per round
     # (Already implied by the assignment of seat_id per round per participant)
 
-    # 4. Each pair of participants plays together exactly 3 or 4 times
+    # 4. Compute how many times each pair of participants plays together
     times_together = {}
+    deviations = []
+    squared_deviations = []
+    # Ideal number of times two participants should play together
+    ideal_times_together = num_rounds
+
     for p1 in range(num_participants):
         for p2 in range(p1 + 1, num_participants):
-            times_together[p1, p2] = model.NewIntVar(min_times_together, max_times_together,
+            times_together[p1, p2] = model.NewIntVar(0, num_rounds,
                                                      f'times_together_p{p1}_p{p2}')
             same_table = []
             for r in range(num_rounds):
@@ -58,10 +63,25 @@ def generate_seats(num_participants: int, num_rounds: int, min_times_together: i
                 same_table.append(st)
             model.Add(times_together[p1, p2] == sum(same_table))
 
+            # Calculate deviation from ideal_times_together
+            deviation = model.NewIntVar(-num_rounds * num_tables, num_rounds * num_tables, f'deviation_p{p1}_p{p2}')
+            model.Add(deviation == times_together[p1, p2] * num_tables - ideal_times_together)
+
+            # Square the deviation
+            deviation_abs = model.NewIntVar(0, num_rounds * num_tables, f'deviation_abs_p{p1}_p{p2}')
+            model.Add(deviation_abs <= max_difference * num_tables)
+            model.AddAbsEquality(deviation_abs, deviation)
+            squared_deviation = model.NewIntVar(0, num_rounds * num_rounds * num_tables * num_tables, f'squared_deviation_p{p1}_p{p2}')
+            model.AddMultiplicationEquality(squared_deviation, [deviation_abs, deviation_abs])
+            squared_deviations.append(squared_deviation)
+
+    # Objective: minimize total squared deviation
+    model.Minimize(sum(squared_deviations))
+
     # Create the solver and solve
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = 24000.0  # Set a time limit if needed
-    solver.parameters.num_search_workers = 16  # Set the number of search workers if needed
+    solver.parameters.max_time_in_seconds = 600.0  # Set a time limit if needed
+    solver.parameters.num_search_workers = 8  # Set the number of search workers if needed
     solver.parameters.random_seed = 42  # Set a random seed if needed
     status = solver.Solve(model)
 
@@ -87,6 +107,13 @@ def generate_seats(num_participants: int, num_rounds: int, min_times_together: i
                 for p, seat in sorted(tables[t], key=lambda x: x[1]):
                     print(f'    Seat {seat}: Participant {p}')
             print()
+        # Optionally, output the times each pair played together
+        for p1 in range(num_participants):
+            timess = []
+            for p2 in range(p1 + 1, num_participants):
+                times = solver.Value(times_together[p1, p2])
+                timess.append(times)
+            print(f'Participants {p1} played with another participants: {", ".join(map(str, timess))}')
         return rounds
     elif status == INFEASIBLE:
         print('Infeasible solution found.')
@@ -97,4 +124,4 @@ def generate_seats(num_participants: int, num_rounds: int, min_times_together: i
 
 
 if __name__ == '__main__':
-    print(generate_seats(20, 7, 2, 5))
+    print(generate_seats(20, 7, 4))
