@@ -13,10 +13,18 @@ random.seed(42)
 token = get_bearer_token()
 headers = {'Authorization': f'Bearer {token}'}
 baseurl = "https://app.polemicagame.com/v1"
-competition_id = "2873"
+competition_id = "3010"
 members_url = baseurl + "/competitions/" + competition_id + "/members"
 games_url = baseurl + "/competitions/" + competition_id + "/games"
 tour_games_dir = "tour_games"
+seats = {1: {1: {1: 0, 2: 6, 3: 1, 4: 3, 5: 2, 6: 9, 7: 8, 8: 4, 9: 5, 10: 7}},
+         2: {1: {1: 6, 2: 3, 3: 2, 4: 1, 5: 0, 6: 8, 7: 4, 8: 9, 9: 7, 10: 5}},
+         3: {1: {1: 1, 2: 2, 3: 0, 4: 9, 5: 8, 6: 7, 7: 5, 8: 6, 9: 3, 10: 4}},
+         4: {1: {1: 2, 2: 1, 3: 9, 4: 8, 5: 7, 6: 0, 7: 6, 8: 5, 9: 4, 10: 3}},
+         5: {1: {1: 4, 2: 5, 3: 8, 4: 7, 5: 9, 6: 6, 7: 0, 8: 3, 9: 1, 10: 2}},
+         6: {1: {1: 9, 2: 8, 3: 7, 4: 4, 5: 6, 6: 5, 7: 3, 8: 0, 9: 2, 10: 1}},
+         7: {1: {1: 7, 2: 9, 3: 5, 4: 6, 5: 3, 6: 4, 7: 1, 8: 2, 9: 8, 10: 0}},
+         8: {1: {1: 8, 2: 7, 3: 6, 4: 5, 5: 4, 6: 3, 7: 2, 8: 1, 9: 0, 10: 9}}}
 
 
 def authorize():
@@ -51,6 +59,7 @@ def delete_games():
 
 def save_modified_games():
     members = requests.get(members_url, headers=headers).json()
+    members = list(filter(lambda it: it["player"]["id"] != 61996, members))
     # random.shuffle(masters)
     for filename in os.listdir(tour_games_dir):
         if not filename.endswith('.json'):
@@ -66,9 +75,11 @@ def save_modified_games():
             # master = masters[game_num - 1]
             # gameMembers = list(filter(lambda it: it["player"]["id"] != master, members))
             # random.shuffle(gameMembers)
-            # for player, member in zip(game["players"], gameMembers):
-            #     player["player"]["id"] = member["player"]["id"]
-            #     player["username"] = member["player"]["username"]
+            for player in game["players"]:
+                member = members[seats[game_num][table][player["position"]] - 1]
+                player["player"] = {}
+                player["player"]["id"] = member["player"]["id"]
+                player["username"] = member["player"]["username"]
             # game["master"] = master
             # game["referee"]["id"] = master
             res = requests.post(games_url, json=game, headers=headers)
@@ -140,6 +151,6 @@ if __name__ == "__main__":
     authorize()
     crawl_games()
     print_members()
-    delete_games()
-    save_modified_games()
-    save_modified_games_in_overlay_service()
+    # delete_games()
+    # save_modified_games()
+    # save_modified_games_in_overlay_service()

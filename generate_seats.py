@@ -124,4 +124,4 @@ def generate_seats(num_participants: int, num_rounds: int, max_difference: int):
 
 
 if __name__ == '__main__':
-    print(generate_seats(20, 7, 4))
+    print(generate_seats(10, 8, 4))
