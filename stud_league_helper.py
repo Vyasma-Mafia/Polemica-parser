@@ -39,6 +39,7 @@ def calculate_daily_points(current_results, previous_results):
     # Convert data to DataFrame for easy manipulation
     current_df = pd.DataFrame(current_results)
     previous_df = pd.DataFrame(previous_results)
+    previous_df.drop(columns=['points_current'], inplace=True)
     current_df.columns = ['participant_name', 'points_current']
 
     # Merge on participant name assuming uniqueness
