@@ -13,7 +13,7 @@ random.seed(42)
 token = get_bearer_token()
 headers = {'Authorization': f'Bearer {token}'}
 baseurl = "https://app.polemicagame.com/v1"
-competition_id = "3010"
+competition_id = "3043"
 members_url = baseurl + "/competitions/" + competition_id + "/members"
 games_url = baseurl + "/competitions/" + competition_id + "/games"
 tour_games_dir = "tour_games"
@@ -53,8 +53,10 @@ def print_members():
 
 def delete_games():
     games = requests.get(games_url, headers=headers).json()
-    for game_id in games:
-        print("Delete", requests.delete(games_url + "/" + str(game_id["id"]), headers=headers))
+    for game in games:
+        if game.get("result", None) is not None:
+            continue
+        print("Delete", requests.delete(games_url + "/" + str(game["id"]), headers=headers))
 
 
 def save_modified_games():
@@ -68,6 +70,8 @@ def save_modified_games():
         filepath = os.path.join(tour_games_dir, filename)
         with open(filepath, 'r', encoding='utf-8') as f:
             game = json.load(f)
+            if game.get("result", None) is not None:
+                continue
             game_num = game["num"]
             table = game["table"]
             game["id"] = None
@@ -75,11 +79,11 @@ def save_modified_games():
             # master = masters[game_num - 1]
             # gameMembers = list(filter(lambda it: it["player"]["id"] != master, members))
             # random.shuffle(gameMembers)
-            for player in game["players"]:
-                member = members[seats[game_num][table][player["position"]] - 1]
-                player["player"] = {}
-                player["player"]["id"] = member["player"]["id"]
-                player["username"] = member["player"]["username"]
+            # for player in game["players"]:
+            #     member = members[seats[game_num][table][player["position"]] - 1]
+            #     player["player"] = {}
+            #     player["player"]["id"] = member["player"]["id"]
+            #     player["username"] = member["player"]["username"]
             # game["master"] = master
             # game["referee"]["id"] = master
             res = requests.post(games_url, json=game, headers=headers)
@@ -105,6 +109,8 @@ def save_modified_games_in_overlay_service():
             game_num = game["num"]
             table = game["table"]
             game_id = game.get("id", None)
+            if game.get("result", None) is not None:
+                continue
 
             players_urls = []  # List to collect player URLs
             for player in game["players"]:
@@ -149,7 +155,7 @@ def save_modified_games_in_overlay_service():
 
 if __name__ == "__main__":
     authorize()
-    crawl_games()
+    # crawl_games()
     print_members()
     # delete_games()
     # save_modified_games()
