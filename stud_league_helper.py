@@ -5,23 +5,8 @@ import pandas as pd
 from datetime import datetime
 import requests
 
-from generate_tournament_seats import token, baseurl
-
-# Step 1: Fetch the JSON data from the API route
-POLEMICA_USERNAME = os.getenv("POLEMICA_USERNAME")
-POLEMICA_PASSWORD = os.getenv("POLEMICA_PASSWORD")
-
-headers = {'Authorization': f'Bearer {token}'}
 baseurl = "https://app.polemicagame.com/v1"
-token = None
 url = baseurl + "/competitions/3043/metrics?scoringType=1"
-
-
-def authorize():
-    global token, headers
-    token = requests.post(baseurl + "/auth/login",
-                          data={"username": POLEMICA_USERNAME, "password": POLEMICA_PASSWORD}).json()["access_token"]
-    headers = {'Authorization': f'Bearer {token}'}
 
 
 def fetch_tournament_data():
