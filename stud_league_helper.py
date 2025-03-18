@@ -5,12 +5,14 @@ import pandas as pd
 from datetime import datetime
 import requests
 
+from generate_tournament_seats import competition_id
+
 baseurl = "https://app.polemicagame.com/v1"
-url = baseurl + "/competitions/3043/metrics?scoringType=1"
 
 
-def fetch_tournament_data():
+def fetch_tournament_data(competition_id: int):
     try:
+        url = baseurl + f"/competitions/{competition_id}/metrics?scoringType=1"
         response = requests.get(url)
         response.raise_for_status()
         players_data = []
@@ -68,8 +70,9 @@ def update_csv_file(daily_points, csv_filename='tournament_results.csv'):
 
 
 if __name__ == '__main__':
-    current_results = fetch_tournament_data()
     results_csv = sys.argv[1]
+    competition_id = int(sys.argv[2])
+    current_results = fetch_tournament_data(competition_id)
     # initialize_csv_file(initial_data, results_csv)
     previous_results = pd.read_csv(results_csv)
     daily_points = calculate_daily_points(current_results, previous_results)

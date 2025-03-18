@@ -13,7 +13,7 @@ random.seed(42)
 token = get_bearer_token()
 headers = {'Authorization': f'Bearer {token}'}
 baseurl = "https://app.polemicagame.com/v1"
-competition_id = "3043"
+competition_id = "3209"
 members_url = baseurl + "/competitions/" + competition_id + "/members"
 games_url = baseurl + "/competitions/" + competition_id + "/games"
 tour_games_dir = "tour_games"
@@ -155,8 +155,8 @@ def save_modified_games_in_overlay_service():
 
 if __name__ == "__main__":
     authorize()
-    # crawl_games()
+    crawl_games()
     print_members()
-    # delete_games()
-    # save_modified_games()
+    delete_games()
+    save_modified_games()
     # save_modified_games_in_overlay_service()

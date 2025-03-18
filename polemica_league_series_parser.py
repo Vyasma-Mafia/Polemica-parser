@@ -5,11 +5,11 @@ from collections import defaultdict
 
 base_url = 'https://app.polemicagame.com/v1/clubs/72/metrics'
 params = {
-    'tags': 'LeagueOne'
+    'tags': 'ChampionshipLeague'
 }
 
-start_date = datetime(2024, 12, 20)
-end_date = datetime(2025, 2, 23)
+start_date = datetime(2024, 9, 1)
+end_date = datetime(2025, 3, 10)
 
 # Таблица, где ключ - username, значение - словарь {'дата': баллы}
 user_scores = defaultdict(lambda: defaultdict(float))
